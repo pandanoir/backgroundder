@@ -63,19 +63,39 @@ const lookupSurroundingTweets = async (
   ).then((res) => res.json());
 };
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  const targetTweetUrl = req.query.target_tweet_url as string;
-  const tweetId = targetTweetUrl.match(
-    new RegExp(String.raw`https://twitter.com/.+?/status/(\d+)`)
-  )[1];
-  const responseFromTwitter = await lookupSurroundingTweets(tweetId);
+  try {
+    if (typeof ACCESS_TOKEN !== 'string')
+      throw new Error('ACCESS_TOKEN is undefined');
 
-  const indicatedTweetIndex = responseFromTwitter.data.findIndex(
-    ({ id }) => id === tweetId
-  );
-  const response: Response = {
-    after: responseFromTwitter.data.slice(0, indicatedTweetIndex).slice(-5),
-    target_tweet: responseFromTwitter.data[indicatedTweetIndex],
-    before: responseFromTwitter.data.slice(indicatedTweetIndex + 1).slice(0, 5),
-  };
-  res.status(200).json(response);
+    const targetTweetUrl = req.query.target_tweet_url as string;
+    const tweetId: unknown = targetTweetUrl.match(
+      new RegExp(String.raw`https://twitter.com/.+?/status/(\d+)`)
+    )[1];
+    if (typeof tweetId !== 'string')
+      throw new Error('invalid tweetId was given');
+
+    const responseFromTwitter = await lookupSurroundingTweets(tweetId).catch(
+      () => {
+        throw new Error('fetching surrounding tweets failed');
+      }
+    );
+
+    const indicatedTweetIndex = responseFromTwitter.data.findIndex(
+      ({ id }) => id === tweetId
+    );
+    if (indicatedTweetIndex === -1) throw new Error('fetching failed');
+
+    const response: Response = {
+      after: responseFromTwitter.data.slice(0, indicatedTweetIndex).slice(-5),
+      target_tweet: responseFromTwitter.data[indicatedTweetIndex],
+      before: responseFromTwitter.data
+        .slice(indicatedTweetIndex + 1)
+        .slice(0, 5),
+    };
+    res.status(200).json(response);
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      res.status(500).json({ status: 500, title: e.message });
+    } else res.status(500).json({ status: 500, title: 'unknown error' });
+  }
 };
