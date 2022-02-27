@@ -10,7 +10,7 @@ import {
   NextUIProvider,
   Tooltip,
 } from '@nextui-org/react';
-import { Tweet } from './Tweet';
+import { Tweet } from '../components/Tweet';
 
 const useSurroundingTweets = () => {
   const [targetTweetURL, setTargetTweetURL] = useState('');
