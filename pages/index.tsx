@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import { FC, useEffect, useState } from 'react';
-import { Response } from './api/get-surrounding-tweets';
+import { GetSurroundingTweetsResponse } from './api/get-surrounding-tweets';
 import { unstable_batchedUpdates as batchedUpdates } from 'react-dom';
 import {
   Button,
@@ -13,11 +13,17 @@ import {
 import { Tweet } from '../components/Tweet';
 
 const useSurroundingTweets = () => {
-  const [targetTweetURL, setTargetTweetURL] = useState('');
-  const [previousTweets, setPreviousTweets] = useState<Response['before']>([]);
-  const [followingTweets, setFollowingTweets] = useState<Response['after']>([]);
+  const [targetTweetURL, setTargetTweetURL] = useState(
+    'https://twitter.com/le_panda_noir/status/1512729556859293696'
+  );
+  const [previousTweets, setPreviousTweets] = useState<
+    GetSurroundingTweetsResponse['before']
+  >([]);
+  const [followingTweets, setFollowingTweets] = useState<
+    GetSurroundingTweetsResponse['after']
+  >([]);
   const [targetTweet, setTargetTweet] = useState<
-    Response['target_tweet'] | null
+    GetSurroundingTweetsResponse['target_tweet'] | null
   >(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,16 +32,37 @@ const useSurroundingTweets = () => {
       return;
     }
     setLoading(true);
-    fetch(`/api/get-surrounding-tweets?target_tweet_url=${targetTweetURL}`)
+
+    fetch(
+      'https://tf6djch1ol.execute-api.us-east-1.amazonaws.com/default/get-surrounding-tweets',
+      {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'x-api-key': '1Xz2BMbs355KWurKMiIfMaG56eiz5wqqEEE9BkQ8ODODOD',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type,x-api-key',
+        },
+        body: JSON.stringify({
+          target_tweet_url: targetTweetURL,
+        }),
+      }
+    )
       .then((response) => response.json())
-      .then(({ before, after, target_tweet: targetTweet }: Response) => {
-        batchedUpdates(() => {
-          setPreviousTweets(before);
-          setFollowingTweets(after);
-          setTargetTweet(targetTweet);
-          setLoading(false);
-        });
-      })
+      .then(
+        ({
+          before,
+          after,
+          target_tweet: targetTweet,
+        }: GetSurroundingTweetsResponse) => {
+          batchedUpdates(() => {
+            setPreviousTweets(before);
+            setFollowingTweets(after);
+            setTargetTweet(targetTweet);
+            setLoading(false);
+          });
+        }
+      )
       .finally(() => {
         setLoading(false);
       });
