@@ -13,9 +13,7 @@ import {
 import { Tweet } from '../components/Tweet';
 
 const useSurroundingTweets = () => {
-  const [targetTweetURL, setTargetTweetURL] = useState(
-    'https://twitter.com/le_panda_noir/status/1512729556859293696'
-  );
+  const [targetTweetURL, setTargetTweetURL] = useState('');
   const [previousTweets, setPreviousTweets] = useState<
     GetSurroundingTweetsResponse['before']
   >([]);
@@ -34,21 +32,22 @@ const useSurroundingTweets = () => {
     setLoading(true);
 
     fetch(
-      'https://tf6djch1ol.execute-api.us-east-1.amazonaws.com/default/get-surrounding-tweets',
+      'https://avn737jv9b.execute-api.us-east-1.amazonaws.com/default/get-surrounding-tweets',
       {
         method: 'POST',
         mode: 'cors',
         headers: {
-          'x-api-key': '1Xz2BMbs355KWurKMiIfMaG56eiz5wqqEEE9BkQ8ODODOD',
-          'Access-Control-Request-Method': 'POST',
-          'Access-Control-Request-Headers': 'content-type,x-api-key',
+          'x-api-key': '1Xz2BMbs355KWurKMiIfMaG56eiz5wqqEEE9BkQ8',
         },
         body: JSON.stringify({
           target_tweet_url: targetTweetURL,
         }),
       }
     )
-      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+        return response.json();
+      })
       .then(
         ({
           before,
