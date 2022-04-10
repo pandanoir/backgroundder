@@ -6,10 +6,13 @@ import type {
 } from 'twitter-types';
 import { Temporal } from '@js-temporal/polyfill';
 
-export type Response = {
+export type GetSurroundingTweetsResponse = {
   before: APITweet[];
   after: APITweet[];
   target_tweet: APITweet;
+};
+type ErrorResponse = {
+  title: string;
 };
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
@@ -62,7 +65,10 @@ const lookupSurroundingTweets = async (
     }
   ).then((res) => res.json());
 };
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+export default async (
+  req: NextApiRequest,
+  res: NextApiResponse<GetSurroundingTweetsResponse | ErrorResponse>
+) => {
   try {
     if (typeof ACCESS_TOKEN !== 'string')
       throw new Error('ACCESS_TOKEN is undefined');
@@ -85,17 +91,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     );
     if (indicatedTweetIndex === -1) throw new Error('fetching failed');
 
-    const response: Response = {
+    res.status(200).json({
       after: responseFromTwitter.data.slice(0, indicatedTweetIndex).slice(-5),
       target_tweet: responseFromTwitter.data[indicatedTweetIndex],
       before: responseFromTwitter.data
         .slice(indicatedTweetIndex + 1)
         .slice(0, 5),
-    };
-    res.status(200).json(response);
+    });
   } catch (e: unknown) {
     if (e instanceof Error) {
-      res.status(500).json({ status: 500, title: e.message });
-    } else res.status(500).json({ status: 500, title: 'unknown error' });
+      res.status(500).json({ title: e.message });
+    } else res.status(500).json({ title: 'unknown error' });
   }
 };
